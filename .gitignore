@@ -2,6 +2,7 @@ trivia
 __pycache__
 opentdb.py
 quiz.py
+db.py
 .venv
 
 .DS_Store
