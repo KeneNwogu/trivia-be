@@ -2,6 +2,8 @@ from flask_cors import cross_origin
 
 from quiz import app, db
 from flask import request, Response
+
+from quiz.api.auth import token_auth
 from quiz.models import Questions, User
 from quiz.api.errors import bad_request
 import json
@@ -67,13 +69,59 @@ def login():
     if user:
         verified = user.verify_password(data['password'])
         if verified:
-            token = user.create_or_get_token(expires_in=3600)
+            user_token = user.create_or_get_token(expires_in=3600)
+            print(user_token.token)
             success_message = {
-                'token': token,
+                'token': user_token.token,
                 'user_id': user.id,
                 'username': user.username,
-                'email': user.email
+                'email': user.email,
+                'hearts': user.hearts,
+                'high_score': user.high_score
             }
             return Response(json.dumps(success_message))
 
     return bad_request('Invalid username or password')
+
+
+@app.route("/api/users/<int:key>/", methods=['GET', 'POST'])
+@token_auth.login_required
+def user_details(key):
+    if request.method == 'GET':
+        user = User.query.get_or_404(key)
+        if user:
+            # get user's current rank based on high score
+            users = User.query.order_by(User.high_score).all()[::-1]
+
+            user_rank = users.index(user)
+            user.rank = user_rank + 1
+            db.session.commit()
+            data = {
+                'user_id': user.id,
+                'username': user.username,
+                'email': user.email,
+                'rank': user.rank,
+                'high_score': user.high_score,
+                'hearts': user.hearts,
+                'account_number': user.account_number
+            }
+        return Response(json.dumps(data))
+
+    if request.method == 'POST':
+        data = request.get_json(force=True)
+        user = User.query.get_or_404(key)
+        if user:
+            if 'high_score' in data:
+                user.high_score = data['high_score']
+            if 'hearts' in data:
+                user.hearts = data['hearts']
+            db.session.commit()
+        payload = {
+            'username': user.username,
+            'email': user.email,
+            'rank': user.rank,
+            'high_score': user.high_score,
+            'hearts': user.hearts,
+            'account_number': user.account_number
+        }
+        return Response(json.dumps(payload))

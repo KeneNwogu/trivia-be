@@ -4,12 +4,6 @@ from datetime import datetime, timedelta
 
 from quiz import db
 from werkzeug.security import generate_password_hash, check_password_hash
-records = registrations = db.Table('registrations',
-                            db.Column('user_id', db.Integer,
-                            db.ForeignKey('user.id')),
-                            db.Column('question_id', db.Integer,
-                            db.ForeignKey('questions.id'))
-                        )
 
 
 class JsonModel(object):
@@ -40,6 +34,7 @@ class User(db.Model, JsonModel):
         expiration_time = now + timedelta(seconds=expires_in)
         user_token = UserToken(token=token, expiration_time=expiration_time)
         user_token.user = self
+        print(user_token.user)
         db.session.add(user_token)
         db.session.commit()
         return user_token
@@ -69,13 +64,13 @@ class User(db.Model, JsonModel):
         return data
 
     def __repr__(self):
-        return f'User: {self.name}'
+        return f'User: {self.username}'
 
 
 class UserToken(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     token = db.Column(db.String(50), nullable=False)
-    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=True)
     expiration_time = db.Column(db.DateTime, default=datetime.utcnow)
 
 

@@ -9,7 +9,7 @@ from quiz.models import Questions, IncorrectAnswers
 url = 'https://opentdb.com/api.php'
 payload = {
     'amount': 10,
-    'category': 11,
+    'category': 9,
     'difficulty': 'easy'
 }
 r = requests.get(url, params=payload)
